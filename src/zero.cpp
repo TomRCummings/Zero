@@ -112,7 +112,7 @@ int main() {
 				std::cout << "Type \"back\" to go back, \"save\" to save the current resource to your disk, or hit enter to choose a different domain:" << std::endl;
 			}
 			std::getline(std::cin, nextInput);
-			if (backStack.back()->type == directory && !nextInput.empty() && nextInput.find_first_not_of("0123456789") == std::string::npos) {
+			if ((backStack.back()->type == directory || backStack.back()->type == search) && !nextInput.empty() && nextInput.find_first_not_of("0123456789") == std::string::npos) {
 				const int i{ std::stoi(nextInput) };
 				if (i >= backStack.back()->referents.size()) {
 					std::cout << "The number you entered does not correspond with an entry in this directory; please try again." << std::endl;
