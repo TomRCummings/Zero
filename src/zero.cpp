@@ -33,6 +33,7 @@ int main() {
 
 	bool runInputLoop = true;
 	bool selectFromCurrentPage = false;
+	bool onStack = false;
 
 	std::string domain, selector, port;
 	GopherType type = unknown;
@@ -61,27 +62,39 @@ int main() {
 			type = backStack.back()->type;
 
 			if (type == search) {
+				selector = selector.substr(0, selector.find("\t"));
 				std::string searchString;
 				std::cout << "Enter your search string: ";
 				std::getline(std::cin, searchString);
 				selector = selector + "\t" + searchString;
+				//std::cout << "Selector: " << selector << std::endl;
 			}
 		} // At this point it is assumed that port, domain, and selector are set and that backStack.back() contains the pointer to the GopherResponse representing the requested resource
 
-		GopherIdentifier gi = { domain, port, selector };
-		if (backStack.back()->type == search || responseCache.find(gi) == responseCache.end()) { //current identifier is not in response cache
-			if (backStack.back()->type != search) {
+		if (!onStack) {
+			GopherIdentifier gi = { domain, port, selector };
+			auto cacheResult = responseCache.find(gi);
+			if (cacheResult == responseCache.end()) { //current identifier is not in response cache
+				//std::cout << "Response not found in cache!" << std::endl;
+				//std::cout << gopherResponseToString(*backStack.back()) << std::endl;
 				responseCache.insert({ gi, backStack.back() });
+
+				gi.selector += "\r\n";
+
+				requestAndParseResponse(gi, *backStack.back(), type);
+				if (backStack.back()->response.size() == 0) {
+					//Either no connection established or no response
+					backStack.pop_back();
+					continue;
+				}
+
 			}
-			gi.selector += "\r\n";
-
-			requestAndParseResponse(gi, *backStack.back(), type);
-
+			else {
+				//std::cout << "Response found in cache!" << std::endl;
+				backStack.back() = cacheResult->second;
+			}
 		}
-		else {
-			auto search = responseCache.find(gi);
-			backStack.back() = search->second;
-		}
+		onStack = false;
 
 		std::string nextInput;
 		bool usableInputGot = false;
@@ -116,6 +129,7 @@ int main() {
 					selectFromCurrentPage = true;
 					usableInputGot = true;
 					backStack.pop_back();
+					onStack = true;
 				}
 			}
 			else if (nextInput == "save") {
@@ -229,7 +243,8 @@ void displayDirectory(const GopherResponse& dir) {
 
 		if (typeString == "Info" || typeString == "Error") {
 			std::cout << " \t\t" + label << std::endl;
-		} else {
+		}
+		else {
 			std::cout << std::to_string(referenceCount) + "\t" + typeString + "\t" + label << std::endl;
 			referenceCount++;
 		}
