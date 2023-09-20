@@ -53,6 +53,9 @@ int main() {
 			std::getline(std::cin, selector);
 
 			response = std::shared_ptr<GopherResponse>(new GopherResponse());
+			response->domain = domain;
+			response->port = port;
+			response->selector = selector;
 			backStack.push_back(response);
 		}
 		else {
